@@ -1,0 +1,14 @@
+#Default datasource
+quarkus:
+  datasource:
+    employees:
+      db-kind: h2
+
+#hibernate properties
+  hibernate-orm:
+    database:
+      generation: drop-and-create
+    log.sql: true
+
+# to pre-populate our database with some data
+    sql-load-script: import.sql
