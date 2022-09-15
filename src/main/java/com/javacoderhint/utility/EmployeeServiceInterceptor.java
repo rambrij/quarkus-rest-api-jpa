@@ -22,6 +22,18 @@ public class EmployeeServiceInterceptor {
         logger.info("The object the method was invoked on:" + invocationContext.getTarget().getClass().getName());
 
         return possibleReturn;
+    }
 
+    @AroundInvoke
+    public Object request(InvocationContext invocationContext) throws Exception {
+        logger = Logger.getLogger(invocationContext.getTarget().getClass().getName());
+        System.out.println("log.........");
+        logger.info("Method: " + invocationContext.getMethod().getName());
+        logger.info("Arguments: " + invocationContext.getParameters());
+        logger.info("Executing the called method");
+        Object possibleReturn = invocationContext.proceed();
+        logger.info("The object the method was invoked on:" + invocationContext.getTarget().getClass().getName());
+
+        return possibleReturn;
     }
 }

@@ -2,10 +2,8 @@ package com.javacoderhint.model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "employee")
@@ -13,6 +11,8 @@ public class Employee {
     @Id
     @GeneratedValue
     private Long id;
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Name is mandatory")
     private String name;
     private String role;
     private Integer age;

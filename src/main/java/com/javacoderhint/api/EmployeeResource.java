@@ -1,65 +1,72 @@
 package com.javacoderhint.api;
 
 import com.javacoderhint.model.Employee;
+import com.javacoderhint.repository.EmployeeRepository;
 import com.javacoderhint.service.EmployeeService;
+import io.smallrye.common.constraint.NotNull;
 
 import javax.inject.Inject;
+import javax.transaction.Transactional;
+import javax.validation.Valid;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @Path("/employees")
 public class EmployeeResource {
+
     @Inject
-    EmployeeService employeeService;
+    EmployeeRepository employeeRepository;
 
     @GET
-    public List<Employee> findAll(){
-        return employeeService.getEmployees();
+    public List<Employee> getAll() {
+        return this.employeeRepository.listAll();
     }
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") long id) {
-        try {
-            final var employeeByIdOpt = employeeService.findEmployeeById(id);
-            if (employeeByIdOpt.isEmpty()) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            return Response.ok(employeeByIdOpt.get()).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+    public Response get(@PathParam("id") Long id) {
+        return this.employeeRepository.findByIdOptional(id)
+                .map(emp -> Response.ok(emp).build())
+                .orElseGet(() -> Response.status(Status.NOT_FOUND).build());
     }
 
     @POST
-    public Response create(Employee employee) {
-        employeeService.create(employee);
-        return Response.created(URI.create("/persons/" + employee.getId())).build();
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Employee post(@NotNull @Valid Employee employee) {
+        this.employeeRepository.persist(employee);
+        return employee;
     }
 
     @PUT
     @Path("/{id}")
-    public Response update(@PathParam("id") long id, Employee employee) {
-        try {
-            return Response.ok(employeeService.update(id, employee)).build();
-        } catch (Exception e) {
-            if (e instanceof WebApplicationException) {
-                return Response.status(Response.Status.NOT_FOUND).entity(Map.of("message", e.getMessage())).build();
-            }
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response put(@PathParam("id") long id, @NotNull @Valid Employee employee) {
+        return this.employeeRepository.findByIdOptional(id)
+                .map(emp -> {
+                    emp.setId(id);
+                    emp.setName(employee.getName());
+                    emp.setRole(employee.getRole());
+                    emp.setAge(employee.getAge());
+                    this.employeeRepository.persist(emp);
+                    return Response.ok(emp).build();
+                })
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @DELETE
     @Path("/{id}")
-    public Response delete(@PathParam("id") long id) {
-        var isDeleted = employeeService.delete(id);
-        if (!isDeleted) {
-            return Response.notModified().build();
-        }
-        return Response.noContent().build();
+    @Transactional
+    public Response delete(@PathParam("id") Long id) {
+        return this.employeeRepository.findByIdOptional(id)
+                .map(emp -> {
+                    this.employeeRepository.delete(emp);
+                    return Response.noContent().build();
+                })
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 }
